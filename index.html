@@ -136,7 +136,7 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
         <h2 id="h-ass"><span class="step">2</span>Assinaturas</h2>
         <p class="hint">Use imagens PNG com fundo transparente ou branco.</p>
         <div class="sigblock">
-          <h3>Coordenador do Evento <span class="fixtag">assinatura fixa</span></h3>
+          <h3>Coordenadora do Evento <span class="fixtag">assinatura fixa</span></h3>
           <div class="drop" id="sig1Drop">
             <input type="file" id="sig1File" accept="image/png,image/jpeg,image/webp" aria-label="Anexar assinatura do coordenador do evento">
             <div class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-1 4-8 7-8s1 6 4 6 3-3 5-3"/><path d="M3 21h18"/></svg></div>
@@ -144,8 +144,8 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
             <img id="sig1Prev" class="sigprev" alt="" hidden>
           </div>
           <div class="row2">
-            <label class="f" for="s1Nome">Nome<input type="text" id="s1Nome" placeholder="Nome completo" value="Lauro Andrade"></label>
-            <label class="f" for="s1Cargo">Cargo<input type="text" id="s1Cargo" value="Coordenador do Evento"></label>
+            <label class="f" for="s1Nome">Nome<input type="text" id="s1Nome" placeholder="Nome completo" value="Ivana"></label>
+            <label class="f" for="s1Cargo">Cargo<input type="text" id="s1Cargo" value="Coordenadora do Evento"></label>
           </div>
           <button type="button" class="linkbtn" id="sig1Clear" hidden>Remover imagem</button>
         </div>
@@ -174,7 +174,7 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
               <option>participante</option><option>palestrante</option><option>ministrante de oficina</option><option>monitor(a)</option><option>organizador(a)</option>
             </select>
           </label>
-          <label class="f" for="evCarga">Carga horária padrão<input type="number" id="evCarga" min="0" step="0.5" placeholder="horas"></label>
+          <label class="f" for="evCarga">Carga horária padrão<input type="number" id="evCarga" min="0" step="0.5" placeholder="horas" value="3"></label>
         </div>
         <label class="f" for="evAtividade">Atividade padrão (opcional)<input type="text" id="evAtividade" placeholder="ex.: Oficina de Cianotipia"></label>
         <div class="row2">
@@ -238,8 +238,8 @@ const $ = (id) => document.getElementById(id);
 const state = {
   rows: [
     { nome: "Exemplo: Maria Souza" },
-    { nome: "Exemplo: João Pereira", condicao: "ministrante de oficina", atividade: "Oficina Paper Toy", carga: "2" },
-    { nome: "Exemplo: Ana Clara Ribeiro", atividade: "Oficina de Cianotipia", carga: "4" }
+    { nome: "Exemplo: João Pereira", condicao: "ministrante de oficina", atividade: "Oficina Paper Toy", carga: "3" },
+    { nome: "Exemplo: Ana Clara Ribeiro", atividade: "Oficina de Cianotipia", carga: "3" }
   ],
   example: true, sel: 0, sig1: null, sig2: null, busy: false
 };
@@ -485,7 +485,7 @@ bindSig(1); bindSig(2);
     $("sig1Prev").src = data; $("sig1Prev").hidden = false;
     $("sig1Sub").textContent = FILE + " (fixa)";
     $("sig1File").disabled = true; $("sig1Drop").style.cursor = "default";
-    $("sig1Drop").querySelector(".t b").textContent = "Assinatura do coordenador";
+    $("sig1Drop").querySelector(".t b").textContent = "Assinatura da coordenadora";
     renderPreview();
   } catch {
     $("sig1Sub").textContent = "Não achei coordenador.png. Anexe a assinatura manualmente.";
@@ -515,7 +515,7 @@ async function save(filename, data) {
   }
 }
 $("btnModelo").addEventListener("click", async () => {
-  const csv = "﻿nome;condicao;atividade;carga\nMaria Souza;participante;Oficina de Cianotipia;4\nJoão Pereira;ministrante de oficina;Oficina Paper Toy;2\nAna Clara Ribeiro;participante;;\n";
+  const csv = "﻿nome;condicao;atividade;carga\nMaria Souza;participante;Oficina de Cianotipia;3\nJoão Pereira;ministrante de oficina;Oficina Paper Toy;3\nAna Clara Ribeiro;participante;;\n";
   if (await save("modelo-participantes.csv", csv)) setStatus("Modelo baixado. Preencha e anexe no passo 1.", "ok");
 });
 
