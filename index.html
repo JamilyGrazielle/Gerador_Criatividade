@@ -102,6 +102,7 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
 .cert .sn{margin:8px 0 0;font-weight:700;font-size:15px;color:#1F1A24}
 .cert .sc{margin:2px 0 0;font-size:13px;color:#5C5566}
 .cert .foot{margin:18px 0 0;font-size:13px;color:#5C5566}
+  .fixtag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#22A94A1f;color:#178a3a;margin-left:6px;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -135,30 +136,30 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
         <h2 id="h-ass"><span class="step">2</span>Assinaturas</h2>
         <p class="hint">Use imagens PNG com fundo transparente ou branco.</p>
         <div class="sigblock">
-          <h3>Coordenação do Departamento</h3>
-          <div class="drop">
-            <input type="file" id="sig1File" accept="image/png,image/jpeg,image/webp" aria-label="Anexar assinatura da coordenação do departamento">
+          <h3>Coordenador do Evento <span class="fixtag">assinatura fixa</span></h3>
+          <div class="drop" id="sig1Drop">
+            <input type="file" id="sig1File" accept="image/png,image/jpeg,image/webp" aria-label="Anexar assinatura do coordenador do evento">
             <div class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-1 4-8 7-8s1 6 4 6 3-3 5-3"/><path d="M3 21h18"/></svg></div>
-            <div class="t"><b>Anexar assinatura</b><span id="sig1Sub">Nenhuma imagem</span></div>
+            <div class="t"><b>Anexar assinatura</b><span id="sig1Sub">Carregando coordenador.png…</span></div>
             <img id="sig1Prev" class="sigprev" alt="" hidden>
           </div>
           <div class="row2">
-            <label class="f" for="s1Nome">Nome<input type="text" id="s1Nome" placeholder="Nome completo"></label>
-            <label class="f" for="s1Cargo">Cargo<input type="text" id="s1Cargo" value="Coordenação do Departamento de Design"></label>
+            <label class="f" for="s1Nome">Nome<input type="text" id="s1Nome" placeholder="Nome completo" value="Lauro Andrade"></label>
+            <label class="f" for="s1Cargo">Cargo<input type="text" id="s1Cargo" value="Coordenador do Evento"></label>
           </div>
           <button type="button" class="linkbtn" id="sig1Clear" hidden>Remover imagem</button>
         </div>
         <div class="sigblock">
-          <h3>Coordenação do Evento</h3>
+          <h3>Professor(a) / Palestrante da Oficina</h3>
           <div class="drop">
-            <input type="file" id="sig2File" accept="image/png,image/jpeg,image/webp" aria-label="Anexar assinatura da coordenação do evento">
+            <input type="file" id="sig2File" accept="image/png,image/jpeg,image/webp" aria-label="Anexar assinatura do professor ou palestrante da oficina">
             <div class="ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-1 4-8 7-8s1 6 4 6 3-3 5-3"/><path d="M3 21h18"/></svg></div>
             <div class="t"><b>Anexar assinatura</b><span id="sig2Sub">Nenhuma imagem</span></div>
             <img id="sig2Prev" class="sigprev" alt="" hidden>
           </div>
           <div class="row2">
             <label class="f" for="s2Nome">Nome<input type="text" id="s2Nome" placeholder="Nome completo"></label>
-            <label class="f" for="s2Cargo">Cargo<input type="text" id="s2Cargo" value="Coordenação do Dia da Criatividade"></label>
+            <label class="f" for="s2Cargo">Cargo<input type="text" id="s2Cargo" value="Professor(a) / Palestrante da Oficina"></label>
           </div>
           <button type="button" class="linkbtn" id="sig2Clear" hidden>Remover imagem</button>
         </div>
@@ -471,6 +472,25 @@ function bindSig(n) {
   });
 }
 bindSig(1); bindSig(2);
+
+/* assinatura fixa do coordenador: carrega o arquivo "coordenador.png" da mesma pasta */
+(async function loadCoordenador() {
+  const FILE = "coordenador.png";
+  try {
+    const res = await fetch(FILE, { cache: "no-cache" });
+    if (!res.ok) throw new Error(res.status);
+    const blob = await res.blob();
+    const data = await new Promise((ok, err) => { const rd = new FileReader(); rd.onload = () => ok(rd.result); rd.onerror = err; rd.readAsDataURL(blob); });
+    state.sig1 = data;
+    $("sig1Prev").src = data; $("sig1Prev").hidden = false;
+    $("sig1Sub").textContent = FILE + " (fixa)";
+    $("sig1File").disabled = true; $("sig1Drop").style.cursor = "default";
+    $("sig1Drop").querySelector(".t b").textContent = "Assinatura do coordenador";
+    renderPreview();
+  } catch {
+    $("sig1Sub").textContent = "Não achei coordenador.png. Anexe a assinatura manualmente.";
+  }
+})();
 
 /* ---------- download ---------- */
 let dlNs; const dlReady = (async () => { try { dlNs = window.claude?.use ? await window.claude.use("downloads") : null; } catch { dlNs = null; } })();
