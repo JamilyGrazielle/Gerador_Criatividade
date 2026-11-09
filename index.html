@@ -283,7 +283,7 @@ function certHTML(r, i) {
   const d = resolveRow(r, i);
   const nameSize = d.nome.length > 44 ? 28 : d.nome.length > 34 ? 33 : 40;
   let text = `participou do <strong>Dia da Criatividade</strong>, realizado em <strong>${esc(d.data)}</strong> pelo Departamento de Design do IFMA – Campus São Luís Monte Castelo, na condição de <strong>${esc(d.condicao)}</strong>`;
-  if (d.atividade) text += `, na atividade <strong>${esc(d.atividade)}</strong>`;
+  if (d.atividade) text += `, na <strong>${esc(d.atividade)}</strong>`;
   if (d.carga) text += `, com carga horária de <strong>${esc(d.carga)}</strong>`;
   text += ".";
   const sig = (img, nome, cargo) => `
