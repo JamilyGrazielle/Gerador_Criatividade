@@ -194,7 +194,7 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
           </label>
           <label class="f" for="evCarga">Carga horária padrão<input type="number" id="evCarga" min="0" step="0.5" placeholder="horas" value="4"></label>
         </div>
-        <label class="f" for="evAtividade">Atividade padrão (opcional)<input type="text" id="evAtividade" placeholder="ex.: Oficina de Cianotipia"></label>
+        <label class="f" for="evAtividade" id="ativWrap">Atividade padrão (opcional)<input type="text" id="evAtividade" placeholder="ex.: Oficina de Cianotipia"></label>
         <div class="row2">
           <label class="f" for="evEmissao">Data de emissão<input type="text" id="evEmissao" placeholder="ex.: 28 de novembro de 2026"></label>
           <label class="f" for="evPrefixo">Numeração (prefixo)<input type="text" id="evPrefixo" placeholder="ex.: DC2026-"></label>
@@ -290,7 +290,7 @@ const TIPOS = {
   aluno:     { label: "Aluno",     sub: "DE PARTICIPAÇÃO", carga: "4",  duasAss: true,  arquivo: "Alunos",
                hint: "Assinam a coordenadora e o(a) professor(a) da oficina." },
   monitor:   { label: "Monitor",   sub: "DE MONITORIA",    carga: "8",  duasAss: false, arquivo: "Monitores",
-               hint: "Só a coordenadora assina. Deixe a oficina vazia para quem foi monitor do evento todo." },
+               hint: "Só a coordenadora assina. O texto é de monitoria do evento, sem citar oficina." },
   instrutor: { label: "Instrutor", sub: "DE INSTRUTORIA",  carga: "12", duasAss: false, arquivo: "Instrutores",
                hint: "Só a coordenadora assina. Informe a oficina que cada pessoa ministrou." }
 };
@@ -299,6 +299,7 @@ function applyTipo() {
   const t = TIPOS[tipo()];
   $("sig2Block").hidden = !t.duasAss;
   $("condWrap").hidden = tipo() !== "aluno";
+  $("ativWrap").hidden = tipo() === "monitor";
   $("evCarga").value = t.carga;
   $("tipoHint").textContent = t.hint;
   refresh();
@@ -310,9 +311,7 @@ const EVENTO = (d) => `<strong>Dia da Criatividade</strong>, realizado em <stron
 function certText(d) {
   const ch = d.carga ? `, com carga horária de <strong>${esc(d.carga)}</strong>` : "";
   if (tipo() === "monitor") {
-    return d.atividade
-      ? `atuou na monitoria da ${oficina(d.atividade)} no ${EVENTO(d)}${ch}, prestando apoio à preparação e ao desenvolvimento das atividades.`
-      : `atuou na monitoria do ${EVENTO(d)}${ch}, prestando apoio à organização e ao desenvolvimento das atividades do evento.`;
+    return `atuou na monitoria do ${EVENTO(d)}${ch}, prestando apoio à organização e ao desenvolvimento das atividades do evento.`;
   }
   if (tipo() === "instrutor") {
     return d.atividade
@@ -395,7 +394,7 @@ function renderTable() {
   const tb = $("tbody");
   tb.innerHTML = state.rows.map((r, i) => {
     const d = resolveRow(r, i);
-    return `<tr data-i="${i}" class="${i === state.sel ? "sel" : ""}" tabindex="0"><td class="num">${i + 1}</td><td>${esc(d.nome)}</td><td>${esc(tipo() === "aluno" ? d.condicao : TIPOS[tipo()].label)}</td><td>${esc(d.atividade || "—")}</td><td class="num">${esc(d.carga ? d.carga.replace(/ horas?$/, "h") : "—")}</td></tr>`;
+    return `<tr data-i="${i}" class="${i === state.sel ? "sel" : ""}" tabindex="0"><td class="num">${i + 1}</td><td>${esc(d.nome)}</td><td>${esc(tipo() === "aluno" ? d.condicao : TIPOS[tipo()].label)}</td><td>${esc(tipo() === "monitor" ? "—" : (d.atividade || "—"))}</td><td class="num">${esc(d.carga ? d.carga.replace(/ horas?$/, "h") : "—")}</td></tr>`;
   }).join("");
 }
 function pick(i) { state.sel = i; renderTable(); renderPreview(); }
