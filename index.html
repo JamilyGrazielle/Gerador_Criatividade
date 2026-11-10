@@ -102,6 +102,14 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
 .cert .sn{margin:8px 0 0;font-weight:700;font-size:15px;color:#1F1A24}
 .cert .sc{margin:2px 0 0;font-size:13px;color:#5C5566}
 .cert .foot{margin:18px 0 0;font-size:13px;color:#5C5566}
+  .tipos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .tipos label{position:relative;display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;cursor:pointer;background:var(--bg);min-height:46px}
+  .tipos input{position:absolute;opacity:0;pointer-events:none}
+  .tipos b{font-size:14px}
+  .tipos span{font-size:12px;color:var(--muted)}
+  .tipos label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+  .tipos label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+  @media (max-width:420px){.tipos{grid-template-columns:minmax(0,1fr)}}
   .fixtag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#22A94A1f;color:#178a3a;margin-left:6px;vertical-align:middle}
 </style>
 </head>
@@ -117,6 +125,16 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
 
   <div class="grid">
     <div class="col">
+      <section class="card" aria-labelledby="h-tipo">
+        <h2 id="h-tipo">Tipo de certificado</h2>
+        <div class="tipos" role="radiogroup" aria-labelledby="h-tipo">
+          <label><input type="radio" name="tipo" value="aluno" checked><b>Aluno</b><span>4 h · 2 assinaturas</span></label>
+          <label><input type="radio" name="tipo" value="monitor"><b>Monitor</b><span>8 h · coordenadora</span></label>
+          <label><input type="radio" name="tipo" value="instrutor"><b>Instrutor</b><span>12 h · coordenadora</span></label>
+        </div>
+        <p class="hint" id="tipoHint"></p>
+      </section>
+
       <section class="card" aria-labelledby="h-lista">
         <h2 id="h-lista"><span class="step">1</span>Lista de participantes</h2>
         <div class="drop" id="dropList">
@@ -126,8 +144,8 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
         </div>
         <p class="hint">Precisa de uma coluna <b>nome</b>. Opcionais: <b>condicao</b>, <b>atividade</b>, <b>carga</b>. Um arquivo só com nomes, um por linha, também funciona.</p>
         <button type="button" class="linkbtn" id="btnModelo">Baixar planilha modelo (.csv)</button>
-        <label class="f" for="pasteNames">Ou cole os nomes (um por linha)
-          <textarea id="pasteNames" placeholder="Maria Souza&#10;João Pereira"></textarea>
+        <label class="f" for="pasteNames">Ou cole os nomes (um por linha; para separar a oficina use ponto e vírgula)
+          <textarea id="pasteNames" placeholder="Maria Souza&#10;João Pereira;Oficina de Encadernação"></textarea>
         </label>
         <button type="button" class="btn ghost" id="btnPaste">Usar nomes colados</button>
       </section>
@@ -149,7 +167,7 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
           </div>
           <button type="button" class="linkbtn" id="sig1Clear" hidden>Remover imagem</button>
         </div>
-        <div class="sigblock">
+        <div class="sigblock" id="sig2Block">
           <h3>Professor(a) / Palestrante da Oficina</h3>
           <div class="drop">
             <input type="file" id="sig2File" accept="image/png,image/jpeg,image/webp" aria-label="Anexar assinatura do professor ou palestrante da oficina">
@@ -169,12 +187,12 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
         <h2 id="h-dados"><span class="step">3</span>Dados do certificado</h2>
         <label class="f" for="evData">Data do evento<input type="text" id="evData" placeholder="ex.: 21 de novembro de 2026"></label>
         <div class="row2">
-          <label class="f" for="evCondicao">Condição padrão
+          <label class="f" for="evCondicao" id="condWrap">Condição padrão
             <select id="evCondicao">
               <option>participante</option><option>palestrante</option><option>ministrante de oficina</option><option>monitor(a)</option><option>organizador(a)</option>
             </select>
           </label>
-          <label class="f" for="evCarga">Carga horária padrão<input type="number" id="evCarga" min="0" step="0.5" placeholder="horas" value="3"></label>
+          <label class="f" for="evCarga">Carga horária padrão<input type="number" id="evCarga" min="0" step="0.5" placeholder="horas" value="4"></label>
         </div>
         <label class="f" for="evAtividade">Atividade padrão (opcional)<input type="text" id="evAtividade" placeholder="ex.: Oficina de Cianotipia"></label>
         <div class="row2">
@@ -238,8 +256,8 @@ const $ = (id) => document.getElementById(id);
 const state = {
   rows: [
     { nome: "Exemplo: Maria Souza" },
-    { nome: "Exemplo: João Pereira", condicao: "ministrante de oficina", atividade: "Oficina Paper Toy", carga: "3" },
-    { nome: "Exemplo: Ana Clara Ribeiro", atividade: "Oficina de Cianotipia", carga: "3" }
+    { nome: "Exemplo: João Pereira", condicao: "ministrante de oficina", atividade: "Oficina Paper Toy", carga: "4" },
+    { nome: "Exemplo: Ana Clara Ribeiro", atividade: "Oficina de Cianotipia", carga: "4" }
   ],
   example: true, sel: 0, sig1: null, sig2: null, busy: false
 };
@@ -267,6 +285,45 @@ function fmtHoras(c) {
 }
 function pad(n, w) { return String(n).padStart(w, "0"); }
 
+/* ---------- tipos de certificado ---------- */
+const TIPOS = {
+  aluno:     { label: "Aluno",     sub: "DE PARTICIPAÇÃO", carga: "4",  duasAss: true,  arquivo: "Alunos",
+               hint: "Assinam a coordenadora e o(a) professor(a) da oficina." },
+  monitor:   { label: "Monitor",   sub: "DE MONITORIA",    carga: "8",  duasAss: false, arquivo: "Monitores",
+               hint: "Só a coordenadora assina. Deixe a oficina vazia para quem foi monitor do evento todo." },
+  instrutor: { label: "Instrutor", sub: "DE INSTRUTORIA",  carga: "12", duasAss: false, arquivo: "Instrutores",
+               hint: "Só a coordenadora assina. Informe a oficina que cada pessoa ministrou." }
+};
+const tipo = () => (document.querySelector('input[name="tipo"]:checked') || {}).value || "aluno";
+function applyTipo() {
+  const t = TIPOS[tipo()];
+  $("sig2Block").hidden = !t.duasAss;
+  $("condWrap").hidden = tipo() !== "aluno";
+  $("evCarga").value = t.carga;
+  $("tipoHint").textContent = t.hint;
+  refresh();
+}
+document.querySelectorAll('input[name="tipo"]').forEach((r) => r.addEventListener("change", applyTipo));
+/* "Oficina de X" entra como está; um nome sem "Oficina" na frente ganha a palavra "oficina" */
+const oficina = (a) => /^oficina\b/i.test(a) ? `<strong>${esc(a)}</strong>` : `oficina <strong>${esc(a)}</strong>`;
+const EVENTO = (d) => `<strong>Dia da Criatividade</strong>, realizado em <strong>${esc(d.data)}</strong> pelo Departamento de Design do IFMA – Campus São Luís Monte Castelo`;
+function certText(d) {
+  const ch = d.carga ? `, com carga horária de <strong>${esc(d.carga)}</strong>` : "";
+  if (tipo() === "monitor") {
+    return d.atividade
+      ? `atuou na monitoria da ${oficina(d.atividade)} no ${EVENTO(d)}${ch}, prestando apoio à preparação e ao desenvolvimento das atividades.`
+      : `atuou na monitoria do ${EVENTO(d)}${ch}, prestando apoio à organização e ao desenvolvimento das atividades do evento.`;
+  }
+  if (tipo() === "instrutor") {
+    return d.atividade
+      ? `ministrou a ${oficina(d.atividade)} no ${EVENTO(d)}${ch}, contemplando o planejamento, a preparação e a condução da oficina.`
+      : `ministrou oficina no ${EVENTO(d)}${ch}, contemplando o planejamento, a preparação e a condução da atividade.`;
+  }
+  let text = `participou do ${EVENTO(d)}, na condição de <strong>${esc(d.condicao)}</strong>`;
+  if (d.atividade) text += `, na ${oficina(d.atividade)}`;
+  return text + ch + ".";
+}
+
 /* ---------- certificate markup ---------- */
 function resolveRow(r, i) {
   return {
@@ -282,10 +339,7 @@ function resolveRow(r, i) {
 function certHTML(r, i) {
   const d = resolveRow(r, i);
   const nameSize = d.nome.length > 44 ? 28 : d.nome.length > 34 ? 33 : 40;
-  let text = `participou do <strong>Dia da Criatividade</strong>, realizado em <strong>${esc(d.data)}</strong> pelo Departamento de Design do IFMA – Campus São Luís Monte Castelo, na condição de <strong>${esc(d.condicao)}</strong>`;
-  if (d.atividade) text += `, na <strong>${esc(d.atividade)}</strong>`;
-  if (d.carga) text += `, com carga horária de <strong>${esc(d.carga)}</strong>`;
-  text += ".";
+  const text = certText(d);
   const sig = (img, nome, cargo) => `
     <div class="sig">
       <div class="sigimg">${img ? `<img src="${img}" alt="">` : ""}</div>
@@ -310,14 +364,14 @@ function certHTML(r, i) {
     <div class="content">
       <img class="logo" src="${LOGO}" alt="">
       <h1 class="ct">CERTIFICADO</h1>
-      <p class="sub">DE PARTICIPAÇÃO</p>
+      <p class="sub">${TIPOS[tipo()].sub}</p>
       <p class="lead">Certificamos que</p>
       <div class="namebox"><p class="name" style="font-size:${nameSize}px">${esc(d.nome)}</p></div>
       <p class="text">${text}</p>
       <div class="spacer"></div>
       <div class="sigs">
         ${sig(state.sig1, val("s1Nome"), val("s1Cargo"))}
-        ${sig(state.sig2, val("s2Nome"), val("s2Cargo"))}
+        ${TIPOS[tipo()].duasAss ? sig(state.sig2, val("s2Nome"), val("s2Cargo")) : ""}
       </div>
       <p class="foot">São Luís – MA, ${esc(d.emissao)}${d.numero ? "  ·  Certificado nº " + esc(d.numero) : ""}</p>
     </div>
@@ -341,7 +395,7 @@ function renderTable() {
   const tb = $("tbody");
   tb.innerHTML = state.rows.map((r, i) => {
     const d = resolveRow(r, i);
-    return `<tr data-i="${i}" class="${i === state.sel ? "sel" : ""}" tabindex="0"><td class="num">${i + 1}</td><td>${esc(d.nome)}</td><td>${esc(d.condicao)}</td><td>${esc(d.atividade || "—")}</td><td class="num">${esc(d.carga ? d.carga.replace(/ horas?$/, "h") : "—")}</td></tr>`;
+    return `<tr data-i="${i}" class="${i === state.sel ? "sel" : ""}" tabindex="0"><td class="num">${i + 1}</td><td>${esc(d.nome)}</td><td>${esc(tipo() === "aluno" ? d.condicao : TIPOS[tipo()].label)}</td><td>${esc(d.atividade || "—")}</td><td class="num">${esc(d.carga ? d.carga.replace(/ horas?$/, "h") : "—")}</td></tr>`;
   }).join("");
 }
 function pick(i) { state.sel = i; renderTable(); renderPreview(); }
@@ -445,7 +499,10 @@ const dl = $("dropList");
 $("btnPaste").addEventListener("click", () => {
   const names = $("pasteNames").value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
   if (!names.length) { setStatus("Cole pelo menos um nome na caixa de texto.", "warn"); return; }
-  state.rows = names.map((nome) => ({ nome })); state.example = false; state.sel = 0;
+  state.rows = names.map((l) => {
+    const [nome, atividade, carga] = l.split(/\s*[;\t]\s*/);
+    const o = { nome }; if (atividade) o.atividade = atividade; if (carga) o.carga = carga; return o;
+  }); state.example = false; state.sel = 0;
   $("listLabel").textContent = "Nomes colados";
   $("listSub").textContent = `${names.length} participante${names.length === 1 ? "" : "s"}`;
   setStatus(`${names.length} nome${names.length === 1 ? "" : "s"} carregado${names.length === 1 ? "" : "s"}.`, "ok");
@@ -515,7 +572,7 @@ async function save(filename, data) {
   }
 }
 $("btnModelo").addEventListener("click", async () => {
-  const csv = "﻿nome;condicao;atividade;carga\nMaria Souza;participante;Oficina de Cianotipia;3\nJoão Pereira;ministrante de oficina;Oficina Paper Toy;3\nAna Clara Ribeiro;participante;;\n";
+  const csv = "﻿nome;condicao;atividade;carga\nMaria Souza;participante;Oficina de Cianotipia;4\nJoão Pereira;participante;Oficina Paper Toy;4\nAna Clara Ribeiro;participante;;\n";
   if (await save("modelo-participantes.csv", csv)) setStatus("Modelo baixado. Preencha e anexe no passo 1.", "ok");
 });
 
@@ -544,8 +601,9 @@ function lock(b) { state.busy = b; ["btnGerar", "btnUm", "btnPaste"].forEach((id
 function checks() {
   const miss = [];
   if (!val("evData")) miss.push("data do evento");
-  if (!val("s1Nome") || !val("s2Nome")) miss.push("nomes de quem assina");
-  if (!state.sig1 || !state.sig2) miss.push("imagens das assinaturas");
+  const duas = TIPOS[tipo()].duasAss;
+  if (!val("s1Nome") || (duas && !val("s2Nome"))) miss.push("nomes de quem assina");
+  if (!state.sig1 || (duas && !state.sig2)) miss.push("imagens das assinaturas");
   return miss;
 }
 
@@ -556,7 +614,8 @@ async function generate(rows, mode, baseIndex) {
     await fontsReady();
     const total = rows.length;
     if (mode === "zip") {
-      const zip = new JSZip(); const folder = zip.folder("Certificados - Dia da Criatividade"); const used = {};
+      const base = `Certificados ${TIPOS[tipo()].arquivo} - Dia da Criatividade`;
+      const zip = new JSZip(); const folder = zip.folder(base); const used = {};
       for (let k = 0; k < total; k++) {
         setStatus(`Gerando ${k + 1} de ${total}…`);
         const idx = baseIndex ?? k;
@@ -570,7 +629,7 @@ async function generate(rows, mode, baseIndex) {
       }
       setStatus("Compactando a pasta…");
       const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
-      if (await save("Certificados - Dia da Criatividade.zip", blob)) setStatus(`Pronto: ${total} certificado${total === 1 ? "" : "s"} na pasta .zip.`, "ok");
+      if (await save(base + ".zip", blob)) setStatus(`Pronto: ${total} certificado${total === 1 ? "" : "s"} na pasta .zip.`, "ok");
     } else {
       const pdf = newPdf();
       for (let k = 0; k < total; k++) {
@@ -580,7 +639,7 @@ async function generate(rows, mode, baseIndex) {
         progress(k + 1, total);
         await new Promise((r) => setTimeout(r, 0));
       }
-      const fn = total === 1 ? "Certificado - " + safeName(rows[0].nome || "participante") + ".pdf" : "Certificados - Dia da Criatividade.pdf";
+      const fn = total === 1 ? "Certificado - " + safeName(rows[0].nome || "participante") + ".pdf" : `Certificados ${TIPOS[tipo()].arquivo} - Dia da Criatividade.pdf`;
       if (await save(fn, pdf.output("blob"))) setStatus(total === 1 ? "Certificado baixado." : `Pronto: ${total} certificados em um PDF.`, "ok");
     }
   } catch (e) {
@@ -608,7 +667,7 @@ $("btnUm").addEventListener("click", () => {
   generate([r], "one", state.sel);
 });
 
-refresh();
+applyTipo();
 document.fonts && document.fonts.ready.then(fitPreview);
 </script>
 
