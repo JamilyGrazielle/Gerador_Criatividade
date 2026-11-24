@@ -144,10 +144,24 @@ tbody tr.sel td{background:var(--accent-soft);font-weight:700}
         </div>
         <p class="hint">Precisa de uma coluna <b>nome</b>. Opcionais: <b>condicao</b>, <b>atividade</b>, <b>carga</b>. Um arquivo só com nomes, um por linha, também funciona.</p>
         <button type="button" class="linkbtn" id="btnModelo">Baixar planilha modelo (.csv)</button>
+        <div id="instrBox" hidden>
+          <p class="hint">Cole os nomes e as oficinas na mesma ordem: o 1º nome é o instrutor da 1ª oficina, o 2º da 2ª, e assim por diante.</p>
+          <div class="row2">
+            <label class="f" for="instrNomes">Instrutores (um por linha)
+              <textarea id="instrNomes" rows="8" wrap="off" placeholder="JOÃO SANTOS&#10;RIBAMAR MATOS"></textarea>
+            </label>
+            <label class="f" for="instrOficinas">Oficinas (uma por linha)
+              <textarea id="instrOficinas" rows="8" wrap="off" placeholder="PAPER TOY&#10;COLAGEM CRIATIVA"></textarea>
+            </label>
+          </div>
+          <p class="status" id="instrStatus" role="status" aria-live="polite"></p>
+        </div>
+        <div id="pasteBox">
         <label class="f" for="pasteNames">Ou cole os nomes (um por linha; para separar a oficina use ponto e vírgula)
           <textarea id="pasteNames" placeholder="Maria Souza&#10;João Pereira;Oficina de Encadernação"></textarea>
         </label>
         <button type="button" class="btn ghost" id="btnPaste">Usar nomes colados</button>
+        </div>
       </section>
 
       <section class="card" aria-labelledby="h-ass">
@@ -299,14 +313,16 @@ function applyTipo() {
   const t = TIPOS[tipo()];
   $("sig2Block").hidden = !t.duasAss;
   $("condWrap").hidden = tipo() !== "aluno";
-  $("ativWrap").hidden = tipo() === "monitor";
+  $("ativWrap").hidden = tipo() !== "aluno";
+  $("instrBox").hidden = tipo() !== "instrutor";
+  $("pasteBox").hidden = tipo() === "instrutor";
   $("evCarga").value = t.carga;
   $("tipoHint").textContent = t.hint;
   refresh();
 }
 document.querySelectorAll('input[name="tipo"]').forEach((r) => r.addEventListener("change", applyTipo));
 /* "Oficina de X" entra como está; um nome sem "Oficina" na frente ganha a palavra "oficina" */
-const oficina = (a) => /^oficina\b/i.test(a) ? `<strong>${esc(a)}</strong>` : `oficina <strong>${esc(a)}</strong>`;
+const oficina = (a) => `<strong>${esc(/^oficina\b/i.test(a) ? a : "Oficina " + a)}</strong>`;
 const EVENTO = (d) => `<strong>Dia da Criatividade</strong>, realizado em <strong>${esc(d.data)}</strong> pelo Departamento de Design do IFMA – Campus São Luís Monte Castelo`;
 function certText(d) {
   const ch = d.carga ? `, com carga horária de <strong>${esc(d.carga)}</strong>` : "";
@@ -507,6 +523,27 @@ $("btnPaste").addEventListener("click", () => {
   setStatus(`${names.length} nome${names.length === 1 ? "" : "s"} carregado${names.length === 1 ? "" : "s"}.`, "ok");
   refresh();
 });
+
+/* ---------- instrutores: nomes e oficinas pareados pela ordem ---------- */
+function linhas(id) { return $(id).value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean); }
+function parearInstrutores() {
+  const nomes = linhas("instrNomes"), ofs = linhas("instrOficinas");
+  const st = $("instrStatus");
+  if (!nomes.length) { st.textContent = ""; st.className = "status"; return; }
+  state.rows = nomes.map((nome, i) => (ofs[i] ? { nome, atividade: ofs[i] } : { nome }));
+  state.example = false; state.sel = 0;
+  $("listLabel").textContent = "Instrutores colados";
+  $("listSub").textContent = `${nomes.length} instrutor${nomes.length === 1 ? "" : "es"}`;
+  if (nomes.length !== ofs.length) {
+    st.textContent = `${nomes.length} nome${nomes.length === 1 ? "" : "s"} e ${ofs.length} oficina${ofs.length === 1 ? "" : "s"}: as listas precisam ter o mesmo tamanho.`;
+    st.className = "status warn";
+  } else {
+    st.textContent = `${nomes.length} instrutor${nomes.length === 1 ? "" : "es"} pareado${nomes.length === 1 ? "" : "s"} com as oficinas.`;
+    st.className = "status ok";
+  }
+  refresh();
+}
+["instrNomes", "instrOficinas"].forEach((id) => $(id).addEventListener("input", parearInstrutores));
 
 /* ---------- signatures ---------- */
 function bindSig(n) {
